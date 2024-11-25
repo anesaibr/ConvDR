@@ -1,0 +1,44 @@
+#!/bin/bash
+
+#SBATCH --partition=gpu
+#SBATCH --gpus=1
+#SBATCH --job-name=TokenizeMSMARCO
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=18
+#SBATCH --time=02:30:00
+#SBATCH --output=output/success/out-%x.%A.out
+#SBATCH --error=output/error/out-%x.%A.err
+
+module purge
+module load 2022
+module load Anaconda3/2022.05
+
+
+cd $HOME/ConvDR/
+
+# Step 1: Create required directories in datasets
+echo "Creating tokenize directory"
+mkdir -p datasets/cast-shared/tokenized_v2
+echo "Directory created successfully."
+
+# Step 2: Activate the conda environment
+source activate convdr
+
+
+export PYTHONPATH=$PYTHONPATH:$HOME/ConvDR
+echo "PYTHONPATH updated to include ConvDR directory."
+
+
+# Step 4: Create a 10,000-line subset of the collection file (WRONG as it is extracting only TREC-CAR dataset instead of MSMARCO!!)
+# echo "Creating 10,000-line subset of collection.tsv..."
+# head -n 10000 datasets/cast-shared/collection.tsv > datasets/cast-shared/collection_10k.tsv
+# echo "Subset file collection_10k.tsv created."
+
+# Step 5: Run the tokenization script on the subset file
+echo "Running tokenization script on msmarco collection_10k.tsv..."
+python data/tokenizing.py \
+    --collection=datasets/cast-shared/msmarco_qrels_subset_10k.tsv \
+    --out_data_dir=datasets/cast-shared/tokenized_v2 \
+    --model_name_or_path=/scratch-shared/ad-hoc-ance-msmarco/ \
+    --model_type=rdot_nll
+echo "Tokenization phase completed successfully."
