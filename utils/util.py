@@ -28,6 +28,8 @@ import re
 from model.models import MSMarcoConfigDict, ALL_MODELS
 from typing import List, Set, Dict, Tuple, Callable, Iterable, Any
 
+from transformers import RobertaTokenizer #Added this
+
 logger = logging.getLogger(__name__)
 NUM_FOLD = 5
 
@@ -96,49 +98,66 @@ def barrier_array_merge(args,
     # merge alone one axis
 
     if args.local_rank == -1:
-        return data_array
+        output_path = os.path.join(args.output_dir, f"{prefix}_data_obj.pb")
+        
+        # Ensure output directory exists
+        if not os.path.exists(args.output_dir):
+            os.makedirs(args.output_dir)
+            logger.info(f"Output directory created at: {args.output_dir}")
 
+        # Save the data directly in single process mode
+        with open(output_path, 'wb') as handle:
+            pickle.dump(data_array, handle, protocol=4)
+            logger.info(f"Data saved to {output_path} in single-process mode")
+        
+        return data_array  # Return the saved data array directly
+    
     if not load_cache:
-        rank = args.rank
-        if is_first_worker():
-            if not os.path.exists(args.output_dir):
-                os.makedirs(args.output_dir)
+        if args.rank == 0 and not os.path.exists(args.output_dir):
+            os.makedirs(args.output_dir)
+            logger.info(f"Output directory created at: {args.output_dir}")
 
-        dist.barrier()  # directory created
-        pickle_path = os.path.join(
-            args.output_dir, "{1}_data_obj_{0}.pb".format(str(rank), prefix))
+        dist.barrier()  # Ensure directory is created by rank 0 before proceeding
+
+        # Each process saves its data array
+        pickle_path = os.path.join(args.output_dir, f"{prefix}_data_obj_{args.rank}.pb")
         with open(pickle_path, 'wb') as handle:
             pickle.dump(data_array, handle, protocol=4)
+            logger.info(f"Process {args.rank} saved data to {pickle_path}")
 
-        # make sure all processes wrote their data before first process
-        # collects it
-        dist.barrier()
-
-    data_array = None
-
-    data_list = []
+        dist.barrier()  # Ensure all processes have written their files
 
     if not merge:
         return None
 
-    # return empty data
-    if only_load_in_master:
-        if not is_first_worker():
-            dist.barrier()
-            return None
+    # If only loading on master and this isn't the master process, exit early
+    if only_load_in_master and args.rank != 0:
+        dist.barrier()
+        return None
 
-    for i in range(args.world_size
-                   ):  # TODO: dynamically find the max instead of HardCode
-        pickle_path = os.path.join(
-            args.output_dir, "{1}_data_obj_{0}.pb".format(str(i), prefix))
+    data_list = []
+
+    for i in range(args.world_size):
+        process_pickle_path = os.path.join(args.output_dir, f"{prefix}_data_obj_{i}.pb")
         try:
-            with open(pickle_path, 'rb') as handle:
-                b = pickle.load(handle)
-                data_list.append(b)
-        except BaseException:
+            with open(process_pickle_path, 'rb') as handle:
+                data = pickle.load(handle)
+                data_list.append(data)
+                logger.info(f"Loaded data from {process_pickle_path}")
+        except FileNotFoundError:
+            logger.error(f"File {process_pickle_path} not found for process {i}. Skipping.")
+            continue
+        except Exception as e:
+            logger.error(f"Error loading {process_pickle_path}: {e}")
             continue
 
+    # Confirm that data_list contains data before merging
+    if not data_list:
+        logger.error("No data files were loaded for merging. Returning None.")
+        return None
+
     data_array_agg = np.concatenate(data_list, axis=merge_axis)
+    logger.info(f"Data merged successfully with shape {data_array_agg.shape}")
     dist.barrier()
     return data_array_agg
 
@@ -620,23 +639,38 @@ class ConvSearchDataset(Dataset):
 def tokenize_to_file(args, i, num_process, in_path, out_path, line_fn):
 
     configObj = MSMarcoConfigDict[args.model_type]
-    tokenizer = configObj.tokenizer_class.from_pretrained(
-        args.model_name_or_path,
-        do_lower_case=True,
-        cache_dir=None,
-    )
+    # Debugging: Print the arguments being passed to the tokenizer
+    # print("Model name or path:", args.model_name_or_path)
+    # print("Tokenizer class:", configObj.tokenizer_class)
+    # print("Arguments for tokenizer instantiation:", {
+    #     "cache_dir": None
+    # })
+    try:
+      #Added this
+      tokenizer = RobertaTokenizer(
+            # args.model_name_or_path,
+            vocab_file=os.path.join(args.model_name_or_path, "vocab.json"),
+            merges_file=os.path.join(args.model_name_or_path, "merges.txt"),
+            cache_dir=None
+        )
+    #    print("Tokenizer initialized successfully.")
+    except Exception as e:
+        print("Error initializing tokenizer:", e)
+        return  # Exit if the tokenizer fails to initialize
 
     with open(in_path, 'r', encoding='utf-8') if in_path[-2:] != "gz" else gzip.open(in_path, 'rt', encoding='utf8') as in_f,\
-            open('{}_split{}'.format(out_path, i), 'wb') as out_f:
-        for idx, line in enumerate(in_f):
-            if idx % num_process != i:
-                continue
-            try:
-                res = line_fn(args, line, tokenizer)
-            except ValueError:
-                print("Bad passage.")
-            else:
-                out_f.write(res)
+              open('{}_split{}'.format(out_path, i), 'wb') as out_f:
+          for idx, line in enumerate(in_f):
+              if idx % num_process != i:
+                  continue
+              try:
+                  # Debugging: Print line information before tokenizing
+                  # print(f"Processing line {idx} in process {i}")
+                  res = line_fn(args, line, tokenizer)
+              except ValueError:
+                  print("Bad passage.")
+              else:
+                  out_f.write(res)
 
 
 #                      args, 32,        , collection.tsv, passages,
