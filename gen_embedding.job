@@ -1,0 +1,40 @@
+#!/bin/bash
+
+#SBATCH --partition=gpu
+#SBATCH --gpus=1
+#SBATCH --job-name=msmarco_Embedding
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=18
+#SBATCH --time=01:30:00
+#SBATCH --output=output/success/out-%x.%A.out
+#SBATCH --error=output/error/out-%x.%A.err
+
+module purge
+module load 2022
+module load Anaconda3/2022.05
+
+
+cd $HOME/ConvDR/
+
+# Step 1: Create required directories in datasets
+# echo "Creating embedding directory"
+mkdir -p datasets/cast-shared/embeddings
+# echo "Directory created successfully."
+
+# Step 2: Activate the conda environment
+source activate convdr
+
+export PYTHONPATH=$PYTHONPATH:$HOME/ConvDR
+# echo "PYTHONPATH updated to include ConvDR directory."
+
+# Generate passage embeddings
+# echo "Generating passage embeddings from tokenized data..."
+# -m torch.distributed.launch --nproc_per_node=1 
+python drivers/gen_passage_embeddings_anesa.py \
+    --data_dir=datasets/cast-shared/tokenized_v2 \
+    --checkpoint=/scratch-shared/ad-hoc-ance-msmarco \
+    --output_dir=datasets/cast-shared/embeddings \
+    --model_type=rdot_nll \
+    --cache_dir=datasets/cast-shared/cache\
+
+# echo "Passage embedding generation completed successfully."
