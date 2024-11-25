@@ -1,0 +1,76 @@
+#!/bin/bash
+
+#SBATCH --partition=gpu
+#SBATCH --gpus=1
+#SBATCH --job-name=InstallDataset
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=18
+#SBATCH --time=01:30:00
+#SBATCH --output=output/success/out-%x.%A.out
+#SBATCH --error=output/error/out-%x.%A.err
+
+module purge
+module load 2022
+module load Anaconda3/2022.05
+
+cd $HOME/ConvDR/
+
+# Step 1: activate a conda environment
+source activate convdr
+
+# Install huggingface_hub and import required packages
+echo "Installing huggingface_hub..."
+pip install huggingface_hub
+echo "Downloading model snapshot..."
+python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='sentence-transformers/msmarco-roberta-base-ance-firstp', cache_dir='./checkpoints/ad-hoc-ance-msmarco', local_dir='./checkpoints/ad-hoc-ance-msmarco', local_dir_use_symlinks=False)"
+echo "Model snapshot download completed."
+
+# Create datasets and raw directories
+echo "Creating dataset directories..."
+mkdir -p datasets/raw
+cd datasets/raw
+
+# Download and extract msmarco dataset
+echo "Downloading msmarco dataset..."
+wget -O collection.tar.gz https://msmarco.z22.web.core.windows.net/msmarcoranking/collection.tar.gz
+echo "Extracting msmarco dataset..."
+tar -xzvf collection.tar.gz
+mv collection.tsv msmarco.tsv
+rm collection.tar.gz
+echo "msmarco dataset download and extraction completed."
+
+# Download and extract TREC CAR dataset
+echo "Downloading TREC CAR dataset..."
+wget http://trec-car.cs.unh.edu/datareleases/v2.0/paragraphCorpus.v2.0.tar.xz
+module load pv  # Load pv module to handle progress
+echo "Extracting TREC CAR dataset (this may take several minutes)..."
+pv paragraphCorpus.v2.0.tar.xz | tar -xJ
+mv paragraphCorpus/dedup.articles-paragraphs.cbor .
+rm -r paragraphCorpus
+rm paragraphCorpus.v2.0.tar.xz
+echo "TREC CAR dataset download and extraction completed."
+
+# Download duplicate list file
+echo "Downloading duplicate list file..."
+wget http://boston.lti.cs.cmu.edu/Services/treccast19/duplicate_list_v1.0.txt
+echo "Duplicate list file downloaded."
+
+# Create directories for cast-19 and cast-20 datasets
+echo "Creating cast-19 and cast-20 directories..."
+mkdir -p cast-19 cast-20
+
+# Download cast-19 files
+echo "Downloading cast-19 files..."
+wget -P cast-19 https://raw.githubusercontent.com/daltonj/treccastweb/master/2019/data/evaluation/evaluation_topics_v1.0.json
+wget -P cast-19 https://raw.githubusercontent.com/daltonj/treccastweb/master/2019/data/evaluation/evaluation_topics_annotated_resolved_v1.0.tsv
+wget -P cast-19 https://trec.nist.gov/data/cast/2019qrels.txt
+echo "cast-19 files downloaded."
+
+# Download cast-20 files
+echo "Downloading cast-20 files..."
+wget -P cast-20 https://raw.githubusercontent.com/daltonj/treccastweb/master/2020/2020_automatic_evaluation_topics_v1.0.json
+wget -P cast-20 https://raw.githubusercontent.com/daltonj/treccastweb/master/2020/2020_manual_evaluation_topics_v1.0.json
+wget -P cast-20 https://trec.nist.gov/data/cast/2020qrels.txt
+echo "cast-20 files downloaded."
+
+echo "Environment setup and downloads completed successfully."
