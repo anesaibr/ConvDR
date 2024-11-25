@@ -2,6 +2,17 @@
 
 This repo contains code and data for SIGIR 2021 paper ["Few-Shot Conversational Dense Retrieval"](https://arxiv.org/pdf/2105.04166.pdf).
 
+## Snellius Job Guide
+
+Run the Job Files attached above in the following order:
+
+1. `sbatch install_env.job`
+2.  `sbatch install_datasets.job `
+3.  ` sbatch preprocess.job`
+4.  `sbatch gen_msmarco_files.job`
+5.  `sbatch tokenizing.job`
+6.  `sbatch gen_embeddings.job`
+
 ## Prerequisites
 
 Install dependencies:
