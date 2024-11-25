@@ -1,0 +1,43 @@
+#!/bin/bash
+
+#SBATCH --partition=gpu
+#SBATCH --gpus=1
+#SBATCH --job-name=PreProcess
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=18
+#SBATCH --time=02:30:00
+#SBATCH --output=output/success/out-%x.%A.out
+#SBATCH --error=output/error/out-%x.%A.err
+
+module purge
+module load 2022
+module load Anaconda3/2022.05
+
+
+cd $HOME/ConvDR/
+
+# Step 1: Create required directories in datasets
+echo "Creating necessary directories in datasets..."
+mkdir -p datasets/cast-19
+mkdir -p datasets/cast-shared
+mkdir -p datasets/cast-20
+echo "Directories created successfully."
+
+# Step 2: Activate the conda environment
+source activate convdr
+
+
+export PYTHONPATH=$PYTHONPATH:$HOME/ConvDR
+echo "PYTHONPATH updated to include ConvDR directory."
+
+echo "Running the preprocessing script for cast-19..."
+
+python data/preprocess_cast19.py \
+    --car_cbor=datasets/raw/paragraphCorpus/dedup.articles-paragraphs.cbor \
+    --msmarco_collection=datasets/raw/msmarco.tsv \
+    --duplicate_file=datasets/raw/duplicate_list_v1.0.txt \
+    --cast_dir=datasets/raw/cast-19/ \
+    --out_data_dir=datasets/cast-19 \
+    --out_collection_dir=datasets/cast-shared
+
+echo "Preprocessing completed successfully."
