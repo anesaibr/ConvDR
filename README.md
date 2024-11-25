@@ -11,7 +11,7 @@ Run the Job Files attached above in the following order:
 3.  ` sbatch preprocess.job`
 4.  `sbatch gen_msmarco_files.job`
 5.  `sbatch tokenizing.job`
-6.  `sbatch gen_embeddings.job`
+6.  `sbatch gen_embedding.job`
 
 ## Prerequisites
 
