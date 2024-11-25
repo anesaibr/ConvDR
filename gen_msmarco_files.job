@@ -1,0 +1,26 @@
+#!/bin/bash
+
+#SBATCH --partition=gpu
+#SBATCH --gpus=1
+#SBATCH --job-name=msmarco_file_gen
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=18
+#SBATCH --time=01:00:00
+#SBATCH --output=output/success/out-%x.%A.out
+#SBATCH --error=output/error/out-%x.%A.err
+
+module purge
+module load 2022
+module load Anaconda3/2022.05
+
+
+cd $HOME/ConvDR/
+
+# Step 2: Activate the conda environment
+source activate convdr
+
+export PYTHONPATH=$PYTHONPATH:$HOME/ConvDR
+# echo "PYTHONPATH updated to include ConvDR directory."
+
+# Generate msmarco cleansed tsv dataset files used for tokenization and embedding phase
+python msmarco_collection.py
