@@ -5,7 +5,7 @@ This repo contains code and data for SIGIR 2021 paper ["Few-Shot Conversational 
 ## PYSERINI: Snellius Sparse
 Install environment to run pyserini:
 ```bash
-sbatch install_env_for_pyserini.job
+install_env_for_pyserini.job
 ```
 
 Then you have to convert the TSV file of your data with the following job to generate a json file which the pyserini framework can handle:
@@ -29,12 +29,12 @@ If you want to use this repo to create dense embeddings with the pyserini framew
 
 Install environment to run pyserini:
 ```bash
-sbatch install_env_for_pyserini.job
+install_env_for_pyserini.job
 ```
 
 For creating the passage embeddings you have to run the following job:
 ```bash
-sbatch pyserini_dense_embeddings.job
+pyserini_dense_embeddings.job
 ```
 ## Prerequisites
 
