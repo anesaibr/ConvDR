@@ -2,7 +2,7 @@
 
 This repo contains code and data for SIGIR 2021 paper ["Few-Shot Conversational Dense Retrieval"](https://arxiv.org/pdf/2105.04166.pdf).
 
-## Snellius Sparse
+## PYSERINI: Snellius Sparse
 Install environment to run pyserini:
 ```bash
 sbatch install_env_for_pyserini.job
@@ -24,7 +24,7 @@ index_sparse.job
 
 The retrieval_sparse.job file is in this repo but it should be used in the LLM4CS repo after generating the topics
 
-## Snellius Dense
+## PYSERINI: Snellius Dense
 If you want to use this repo to create dense embeddings with the pyserini framework
 
 Install environment to run pyserini:
