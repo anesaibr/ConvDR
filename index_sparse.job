@@ -1,0 +1,33 @@
+#!/bin/bash
+
+#SBATCH --partition=gpu
+#SBATCH --gpus=1
+#SBATCH --job-name=sparse-indexing
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=18
+#SBATCH --time=06:30:00
+#SBATCH --output=$HOME/output/success/out-%x.%A.out
+#SBATCH --error=$HOME/output/error/out-%x.%A.err
+
+module purge
+module load 2022
+module load Anaconda3/2022.05
+
+export JAVA_HOME=$HOME/java/jdk-21
+export PATH=$JAVA_HOME/bin:$PATH
+
+cd $HOME/ConvDR/
+source activate pyserini
+
+
+mkdir -p datasets/cast-shared/sparse_indexed_ms_marco
+
+python -m pyserini.index.lucene \
+  --collection JsonCollection \
+  --input datasets/cast-shared/ms_marco_sparse_json \
+  --index datasets/cast-shared/sparse_indexed_ms_marco \
+  --generator DefaultLuceneDocumentGenerator \
+  --threads 9 \
+  --storePositions --storeDocvectors --storeRaw
+
+echo "Sparse index created at datasets/cast-shared/sparse_indexed_ms_marco"
