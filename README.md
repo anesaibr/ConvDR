@@ -25,9 +25,17 @@ index_sparse.job
 The retrieval_sparse.job file is in this repo but it should be used in the LLM4CS repo after generating the topics
 
 ## Snellius Dense
+If you want to use this repo to create dense embeddings with the pyserini framework
 
+Install environment to run pyserini:
+```bash
+sbatch install_env_for_pyserini.job
+```
 
-
+For creating the passage embeddings you have to run the following job:
+```bash
+sbatch pyserini_dense_embeddings.job
+```
 ## Prerequisites
 
 Install dependencies:
