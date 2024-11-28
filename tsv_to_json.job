@@ -1,0 +1,36 @@
+#!/bin/bash
+
+#SBATCH --partition=gpu
+#SBATCH --gpus=1
+#SBATCH --job-name=tsv_to_json
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=18
+#SBATCH --time=01:00:00
+#SBATCH --output=$HOME/output/success/out-%x.%A.out
+#SBATCH --error=$HOME/output/error/out-%x.%A.err
+
+cd $HOME/ConvDR/
+
+echo "Creating json directory"
+mkdir -p datasets/cast-shared/ms_marco_sparse_json
+echo "Directory created successfully."
+
+
+# step2: activate pyserini environment
+source activate pyserini
+
+# Set variables
+NEW_INPUT="datasets/cast-shared/msmarco_qrels_subset_10k.tsv"
+# INPUT_DIR="datasets/cast-shared/collection_10k.tsv"      # Directory containing the dataset (e.g., JSONL or TSV files)
+INDEX_DIR="datasets/cast-shared/ms_marco_sparse_json"   # Directory to store the index
+
+
+# Pyserini indexing command
+
+echo "Running TSV TO JSON script on collection_10k.tsv..."
+python data/script.py \
+ --collection-path $NEW_INPUT \
+ --output-folder  $INDEX_DIR
+
+# Confirmation message
+echo "Json-FIle created created at $INDEX_DIR"
