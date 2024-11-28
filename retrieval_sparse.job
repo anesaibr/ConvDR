@@ -1,0 +1,36 @@
+#!/bin/bash
+
+#SBATCH --partition=gpu
+#SBATCH --gpus=1
+#SBATCH --job-name=sparse-retrieval
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=18
+#SBATCH --time=06:30:00
+#SBATCH --output=$HOME/output/success/out-%x.%A.out
+#SBATCH --error=$HOME/output/error/out-%x.%A.err
+
+module purge
+module load 2022
+module load Anaconda3/2022.05
+
+export JAVA_HOME=$HOME/java/jdk-21
+export PATH=$JAVA_HOME/bin:$PATH
+
+cd $HOME/ConvDR/
+source activate pyserini
+
+echo "Starting the retrieval"
+mkdir -p datasets/cast-shared/sparse
+
+INDEX="datasets/cast-shared/sparse_indexed_ms_marco"
+# topics has to be the queries such as RAR,REW,RTR
+python -m pyserini.search.lucene \
+  --index $INDEX \
+  --topics msmarco-passage-dev-subset \ 
+  --output runs/run.msmarco-passage.bm25tuned.txt \
+  --output-format msmarco \
+  --hits 1000 \
+  --bm25 --k1 0.82 --b 0.68 \
+  --threads 4 --batch-size 16
+
+echo "performed the retrieval"
