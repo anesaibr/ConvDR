@@ -22,8 +22,7 @@ Run the following job to do this:
 index_sparse.job
 ```
 
-The retrieval_sparse.job file is in this repo but it should be used in the LLM4CS repo after generating the topics
-
+**The retrieval_sparse.job file is in this repo but it should be used in the LLM4CS repo after generating the topics**
 ## PYSERINI: Snellius Dense
 If you want to use this repo to create dense embeddings with the pyserini framework
 
@@ -36,6 +35,7 @@ For creating the passage embeddings you have to run the following job:
 ```bash
 pyserini_dense_embeddings.job
 ```
+**The retrieval_dense.job file is in the LLM4CS repo and you can run it after generating the topics with the right prompting methods**
 ## Prerequisites
 
 Install dependencies:
