@@ -1,0 +1,53 @@
+#!/bin/bash
+
+#SBATCH --partition=gpu
+#SBATCH --gpus=1
+#SBATCH --job-name=embeddings_dense_pyserini
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=18
+#SBATCH --time=06:30:00
+#SBATCH --output=$HOME/output/success/out-%x.%A.out
+#SBATCH --error=$HOME/output/error/out-%x.%A.err
+
+module purge
+module load 2022
+module load Anaconda3/2022.05
+
+export JAVA_HOME=$HOME/java/jdk-21
+export PATH=$JAVA_HOME/bin:$PATH
+
+cd $HOME/ConvDR/
+source activate pyserini
+
+echo "Creating passage embeddings directory"
+mkdir -p datasets/cast-shared/passage_embeddings
+
+python -m pyserini.encode \
+  input   --corpus datasets/cast-shared/ms_marco_sparse_json \
+          --fields text \
+          --delimiter "\n" \
+          --shard-id 0 \
+          --shard-num 1 \
+  output  --embeddings datasets/cast-shared/passage_embeddings \
+          --to-faiss \
+  encoder --encoder castorini/ance-msmarco-passage \
+          --fields text \
+          --batch 16 
+
+# python -m pyserini.encode \
+#   input   --corpus datasets/cast-shared/ms_marco_sparse_json \
+#           --fields text \
+#           --delimiter "\n" \
+#           --shard-id 0 \
+#           --shard-num 1 \
+#   output  --embeddings datasets/cast-shared/passage_embeddings \
+#           --to-faiss \
+#   encoder --encoder castorini/tct_colbert-v2-hnp-msmarco \
+#           --fields text \
+#           --batch 512 \
+#           --fp16 
+
+
+
+# batch_size from 16 to 512 in order to match with: https://github.com/castorini/pyserini/blob/master/docs/experiments-ance.md?utm_source=chatgpt.com
+echo "Dense index created at datasets/cast-shared/passage_embeddigns"
