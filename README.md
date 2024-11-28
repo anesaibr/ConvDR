@@ -2,6 +2,32 @@
 
 This repo contains code and data for SIGIR 2021 paper ["Few-Shot Conversational Dense Retrieval"](https://arxiv.org/pdf/2105.04166.pdf).
 
+## Snellius Sparse
+Install environment to run pyserini:
+```bash
+sbatch install_env_for_pyserini.job
+```
+
+Then you have to convert the TSV file of your data with the following job to generate a json file which the pyserini framework can handle:
+
+(The script.py file will handle the conversion)
+```bash
+tsv_to_json.job
+```
+
+Then the Pyserini library will create the sparse index using: pyserini.index.lucene
+
+Run the following job to do this:
+```bash
+index_sparse.job
+```
+
+The retrieval_sparse.job file is in this repo but it should be used in the LLM4CS repo after generating the topics
+
+## Snellius Dense
+
+
+
 ## Prerequisites
 
 Install dependencies:
